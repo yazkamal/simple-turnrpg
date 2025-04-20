@@ -1,23 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react'
 
-export default function Screen() {
-  const enemy = {
-    name : "Slime" , 
-    hp : 80,
-    basicDmg : 10
-  }
+export default function Screen({enemy,character}) {
 
   const [enemyHp, setEnemyHp] = useState(enemy.hp);
   const maxEnemyHp = enemy.hp;
   const enemyHpPercent = (enemyHp / maxEnemyHp) * 100;
 
   const actionList = ["Basic Attack" , "Skill Attack" , "Guard Attack"];
-
-  const character = {
-    name : "Knight" , 
-    hp : 120,
-    basicDmg : 20
-  }
 
   const [charHp, setCharHp] = useState(character.hp);
   const maxCharHp = character.hp;
@@ -35,12 +24,33 @@ export default function Screen() {
       await renderLog("Chose Action!"); 
       return
     } 
+    if(await checkDead()){
+      return;
+    }
     const rolledAction = await rollEnemyAction();
     await characterTurn(rolledAction);
+    if(await checkDead()){
+      return;
+    }
     await enemyTurn(rolledAction);
-    renderLog(`Turn ${turn} End`)
+    if(await checkDead()){
+      return;
+    }
+    await renderLog(`Turn ${turn} End`)
     setTurn(prev => prev + 1);
 
+  }
+
+  const checkDead = async () => {
+    if(enemyHp <= 0){
+      await renderLog('Enemy Already Dead! Character Victory')
+      return true;
+    }
+    if(charHp <= 0){
+      await renderLog('Character Already Dead! Enemy Victory')
+      return true;
+    }
+    return false;
   }
 
   const characterTurn = async (rolledAction) => {
@@ -60,6 +70,7 @@ export default function Screen() {
           await renderLog("Chose Action!")
           break;
       }
+
   }
 
   const enemyTurn = async(rolledAction) => {
@@ -86,7 +97,7 @@ export default function Screen() {
     const dealt = (action != 3) ? enemy.basicDmg :enemy.basicDmg - 10;
     await renderLog(enemy.name + " dealt "+dealt+" basic damage to " + character.name)
     setTimeout(() => {
-      setCharHp(prev => prev - dealt)
+      setCharHp(prev => Math.max(prev - dealt, 0));
     }, 500);
   }
 
@@ -94,7 +105,7 @@ export default function Screen() {
     const dealt = (action != 3) ? enemy.basicDmg :enemy.basicDmg - 10;
     await renderLog(enemy.name + " dealt "+dealt+" skill damage to " + character.name)
     setTimeout(() => {
-      setCharHp(prev => prev - dealt)
+      setCharHp(prev => Math.max(prev - dealt, 0));
     }, 500);
   }
 
@@ -119,7 +130,7 @@ export default function Screen() {
     const dealt = (enemyAction != 3) ? character.basicDmg :character.basicDmg - 10;
     await renderLog(character.name + " dealt "+dealt+" basic damage to " + enemy.name)
     setTimeout(() => {
-      setEnemyHp(prev => prev - dealt)
+      setEnemyHp(prev => Math.max(prev - dealt, 0));
     }, 500);
   }
 
@@ -127,7 +138,7 @@ export default function Screen() {
     const dealt = (enemyAction != 3) ? character.basicDmg :character.basicDmg - 10;
     await renderLog(character.name + " dealt "+dealt+" skill damage to " + enemy.name)
     setTimeout(() => {
-      setEnemyHp(prev => prev - dealt)
+      setEnemyHp(prev => Math.max(prev - dealt, 0));
     }, 500);
   }
 
